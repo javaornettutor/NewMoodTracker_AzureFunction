@@ -19,26 +19,26 @@ namespace NewMoodTracker_AzureFunction
         private readonly ILogger<MoodTrackerHttpRequestFunction> _logger;
         private readonly MoodTrackerContext _context; 
         private Validator validatorObj;
-        //ILogger<MoodTrackerHttpRequestFunction> logger)//,
-        public MoodTrackerHttpRequestFunction( MoodTrackerContext context)
+        
+        public MoodTrackerHttpRequestFunction( MoodTrackerContext context, ILogger<MoodTrackerHttpRequestFunction> logger)
         {
-          //  _logger = logger;
+            _logger = logger;
             _context = context;
             validatorObj = new Validator(_context);
         }
 
         [Function("HttpExampleFunction")]
-        public IActionResult HttpExampleFunction([HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")] HttpRequest req)
+        public IActionResult HttpExampleFunction([HttpTrigger(AuthorizationLevel.User, "get", "post")] HttpRequest req)
         {
-        //    _logger.LogInformation("C# HTTP trigger function processed a request.");
+            _logger.LogInformation("C# HTTP trigger function processed a request.");
             return new OkObjectResult("Welcome to Azure Functions!");
         }
         
         
         [Function("GetUserByEmail")]
-        public IActionResult GetUserByEmail([HttpTrigger(AuthorizationLevel.Anonymous, "GET", Route = null)] HttpRequest req, ILogger log)
+        public IActionResult GetUserByEmail([HttpTrigger(AuthorizationLevel.Function, "GET", Route = null)] HttpRequest req, ILogger log)
         {
-           // log.LogInformation("Processing AddUser request.");
+            log.LogInformation("Processing AddUser request.");
             string usrEmail = req.Query["userEmail"];
            
             // log.LogInformation("Test");
