@@ -10,7 +10,10 @@ using MoodTrackerAPI_2.Lib;
 using NewMoodTracker_AzureFunction.Data;
 using NewMoodTracker_AzureFunction.Models;
 using Newtonsoft.Json;
+using Serilog;
+using Serilog.Core;
 using System.Net;
+
 
 namespace NewMoodTracker_AzureFunction
 {
@@ -24,21 +27,33 @@ namespace NewMoodTracker_AzureFunction
         {
             _logger = logger;
             _context = context;
-            validatorObj = new Validator(_context);
+            validatorObj = new Validator(_context);    
         }
 
         [Function("HttpExampleFunction")]
         public IActionResult HttpExampleFunction([HttpTrigger(AuthorizationLevel.User, "get", "post")] HttpRequest req)
         {
-            _logger.LogInformation("C# HTTP trigger function processed a request.");
+            
+           // _logger.LogInformation("C# HTTP trigger function processed a request.");
             return new OkObjectResult("Welcome to Azure Functions!");
         }
         
         
         [Function("GetUserByEmail")]
-        public IActionResult GetUserByEmail([HttpTrigger(AuthorizationLevel.Function, "GET", Route = null)] HttpRequest req, ILogger log)
+        public IActionResult GetUserByEmail([HttpTrigger(AuthorizationLevel.Function, "GET", Route = null)] HttpRequest req)//, ILogger log )
         {
-            log.LogInformation("Processing AddUser request.");
+            //var serilogLog = log as Logger;
+
+            //serilogLog.Information("99999999999999999999Processing AddUser request.");
+            //serilogLog.Warning("XXXXXXXXXXXXXXXXX");
+            //serilogLog.Error("8888888888888888888888");
+
+
+            
+            _logger.LogInformation("99999999999999999999Processing AddUser request.");
+            _logger.LogWarning("XXXXXXXXXXXXXXXXX");
+            _logger.LogError("8888888888888888888888");
+
             string usrEmail = req.Query["userEmail"];
            
             // log.LogInformation("Test");
@@ -60,7 +75,7 @@ namespace NewMoodTracker_AzureFunction
         }
         // Endpoint: GetAllUserMoodPerInterval - Retrieves user moods within a specified date interval.
         [Function("GetAllUserMoodPerInterval")]
-        public IActionResult GetAllUserMoodPerInterval([HttpTrigger(AuthorizationLevel.Anonymous, "GET", Route = null)] HttpRequest req, ILogger log)
+        public IActionResult GetAllUserMoodPerInterval([HttpTrigger(AuthorizationLevel.Anonymous, "GET", Route = null)] HttpRequest req)
         {
            
             string intervalStr = req.Query["interval"];
@@ -87,10 +102,10 @@ namespace NewMoodTracker_AzureFunction
 
         // Endpoint: AveragePerMood - Calculates average mood rating or returns mood comments for a given interval.
         [Function("AveragePerMood")]
-        public IActionResult AveragePerMood([HttpTrigger(AuthorizationLevel.Anonymous, "GET", Route = null)] HttpRequest req, ILogger log)
+        public IActionResult AveragePerMood([HttpTrigger(AuthorizationLevel.Anonymous, "GET", Route = null)] HttpRequest req)
         {
             string intervalStr = req.Query["interval"];
-
+            //_logger.LogInformation("test");
 
             if (string.IsNullOrEmpty(intervalStr))
             {
@@ -148,7 +163,7 @@ namespace NewMoodTracker_AzureFunction
         
         // Endpoint: SubmitMood - Allows users to submit a mood entry for the day.
         //[HttpPost("SubmitMood")]
-        //public async IActionResult SubmitMood([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)] HttpRequest req, ILogger log)
+        //public async IActionResult SubmitMood([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)] HttpRequest req)
         //{
 
         //    string curUserEmail = req.Query["curUserEmail"];
