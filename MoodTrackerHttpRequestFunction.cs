@@ -18,7 +18,7 @@ using MoodTrackerAPI_2.Dto;
 using MoodTrackerAPI_2.Lib;
 using NewMoodTracker_AzureFunction.Data;
 using NewMoodTracker_AzureFunction.Models;
-using Newtonsoft.Json;
+using System.Text.Json;
 using Serilog;
 using Serilog.Core;
 using System.Net;
@@ -57,14 +57,15 @@ namespace NewMoodTracker_AzureFunction
 
         // Endpoint: AveragePerMood - Calculates average mood rating or returns mood comments for a given interval.
         [Function("AveragePerMood")]
-        public IActionResult AveragePerMood([HttpTrigger(AuthorizationLevel.Admin, "get", Route = null)] HttpRequest req)
+        public async Task<HttpResponseData> AveragePerMood([HttpTrigger(AuthorizationLevel.Admin, "get", Route = null)] HttpRequestData req, HttpResponseData response)
         {
             string intervalStr = req.Query["interval"];
-            //_logger.LogInformation("test");
+            string jsonResponse = string.Empty;
 
             if (string.IsNullOrEmpty(intervalStr))
             {
-                return new NotFoundObjectResult("invalid interval");
+                getResponseObject(req, response, HttpStatusCode.BadRequest, "Please provide an interval");
+                return response;
             }
             int interval = int.Parse(intervalStr);
 
@@ -89,7 +90,9 @@ namespace NewMoodTracker_AzureFunction
                             moodCommentDic.Add(dictionKey, dictionVal);
                     }
                 }
-                return new OkObjectResult(moodCommentDic);
+                jsonResponse = JsonSerializer.Serialize(moodCommentDic);
+                getResponseObject(req, response, HttpStatusCode.OK, "", jsonResponse);
+                return response;
             }
             else if (interval > 0)
             {
@@ -110,10 +113,19 @@ namespace NewMoodTracker_AzureFunction
                     if (!float.IsNaN(average))
                         moodAverageDic.Add(eachMood.Description, (float)Math.Round(average, 2));
                 }
-                return new OkObjectResult(moodAverageDic.Count == 0 ? null : moodAverageDic);
-            }
+                if (moodAverageDic.Count == 0)
+                {
+                    getResponseObject(req, response, HttpStatusCode.NotFound, "No record found");
+                }
+                else {
+                    jsonResponse = JsonSerializer.Serialize(moodAverageDic);
+                    getResponseObject(req, response, HttpStatusCode.OK, "", jsonResponse);
+                }
 
-            return new NotFoundObjectResult("error");
+                return response;
+            }
+            getResponseObject(req, response, HttpStatusCode.BadRequest, "Error");
+            return response;
         }
         [Function("SubmitMood")]
         public async Task<HttpResponseData> SubmitMood([HttpTrigger(AuthorizationLevel.Function, "post", Route = null)] HttpRequestData req, HttpResponseData response)
@@ -124,7 +136,7 @@ namespace NewMoodTracker_AzureFunction
 
             var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
 
-            var userMood = JsonConvert.DeserializeObject<UserMoodDto>(requestBody);
+            var userMood = Newtonsoft.Json.JsonConvert.DeserializeObject<UserMoodDto>(requestBody);
 
             if (userMood == null)
             {
@@ -171,20 +183,21 @@ namespace NewMoodTracker_AzureFunction
 
             _context.UserMoods.AddAsync(userMoodDbObject);
             _context.SaveChangesAsync();
-            getResponseObject(req, response, HttpStatusCode.Created, $"User Mood created successfully");
+            getResponseObject(req, response, HttpStatusCode.Created, string.Empty);
             return response;
         }
 
         // Endpoint: GetAllUserMoodPerInterval - Retrieves user moods within a specified date interval.
         [Function("GetAllUserMoodPerInterval")]
-        public async Task<IActionResult> GetAllUserMoodPerInterval([HttpTrigger(AuthorizationLevel.Anonymous, "GET", Route = null)] HttpRequest req, ILogger log)
+        public async Task<HttpResponseData> GetAllUserMoodPerInterval([HttpTrigger(AuthorizationLevel.Anonymous, "GET", Route = null)] HttpRequestData req, HttpResponseData response, ILogger log)
         {
-
+            string jsonResponse= string.Empty;
             string intervalStr = req.Query["interval"];
 
             if (string.IsNullOrEmpty(intervalStr))
             {
-                return new NotFoundObjectResult("invalid interval");
+                getResponseObject(req, response, HttpStatusCode.BadRequest, "invalid interval");
+                return response;
             }
             int interval = int.Parse(intervalStr);
 
@@ -193,17 +206,22 @@ namespace NewMoodTracker_AzureFunction
                 DateTime today = DateTime.Today;
                 DateTime dateTo = today.AddDays(-interval);
 
-                return new OkObjectResult(_context.UserMoods.Where(ul => ul.CreatedAt.Value.Date <= today && ul.CreatedAt.Value.Date >= dateTo).ToList());
+                var result = _context.UserMoods.Where(ul => ul.CreatedAt.Value.Date <= today && ul.CreatedAt.Value.Date >= dateTo).ToList();
+                jsonResponse = JsonSerializer.Serialize(result);
+                getResponseObject(req, response, HttpStatusCode.OK, "", jsonResponse);
+
+                return response;
             }
             else
             {
-                return new NotFoundObjectResult("invalid interval");
+                getResponseObject(req, response, HttpStatusCode.BadRequest, "invalid interval");
+                return response;
             }
         }
 
         [Function("TestHttpTriggerFunction")]
         public async Task<IActionResult> TestHttpTriggerFunction(
-             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = "sample/{id?}")] HttpRequest req,
+             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = "sample/{id?}")] HttpRequestData req, HttpResponseData response,
              ILogger log,
              string id)
         {
@@ -214,7 +232,7 @@ namespace NewMoodTracker_AzureFunction
 
             // Retrieve data from the request body
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-            dynamic data = JsonConvert.DeserializeObject(requestBody);
+            dynamic data = Newtonsoft.Json.JsonConvert.DeserializeObject(requestBody);
 
             // If "name" is not provided in query, check the request body
             name ??= data?.name;
@@ -229,17 +247,26 @@ namespace NewMoodTracker_AzureFunction
             // Return a response
             return new OkObjectResult($"Hello, {name}! Your ID is {id ?? "not provided"}.");
         }
-        private void getResponseObject(HttpRequestData req, HttpResponseData response, HttpStatusCode statusCode, string message) 
+        private void getResponseObject(HttpRequestData req, HttpResponseData response, HttpStatusCode statusCode, string errorMessage, string jsonObject="") 
         {
             if (response == null) { 
                 response = req.CreateResponse();
             }
             response.StatusCode =  statusCode;
-            response.WriteAsJsonAsync(new
+            
+            if (!string.IsNullOrEmpty(errorMessage)) 
+            { 
+                response.WriteAsJsonAsync(new
+                {                  
+                    message = errorMessage
+                });
+            }
+            if (!string.IsNullOrEmpty(jsonObject))
             {
-                status = "error",
-                message = message
-            });
+                response.Headers.Add("Content-Type", "application/json; charset=utf-8");
+                response.WriteStringAsync(jsonObject);
+                //response.WriteString(jsonObject);
+            }
             
         }       
     }
