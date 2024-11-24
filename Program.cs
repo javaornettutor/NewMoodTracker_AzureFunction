@@ -21,34 +21,19 @@ namespace MyFunctionApp
 {
     public class Program
     {
-//        private static string instrumentationKey = Environment.GetEnvironmentVariable("APPLICATIONINSIGHTS_INSTRUMENTATIONKEY");
-//        private static string instrumentation_Conn_Str = Environment.GetEnvironmentVariable("APPINSIGHTS_INSTRUMENTATION_CONN_STR");
+        private static string instrumentationKey = Environment.GetEnvironmentVariable("APPINSIGHTS_INSTRUMENTATIONKEY");
+        private static string instrumentation_Conn_Str = Environment.GetEnvironmentVariable("APPINSIGHTS_INSTRUMENTATION_CONN_STR");
+        private static string DB_Conn_Str = Environment.GetEnvironmentVariable("SqlConnectionString");
 
-        
         public static void Main(string[] args)
         {
             var builder = FunctionsApplication.CreateBuilder(args);
 
             builder.ConfigureFunctionsWebApplication();
 
-            builder.Services.AddDbContext<MoodTrackerContext>(options => options.UseSqlServer("Server=tcp:william.database.windows.net,1433;Database=MoodTracker;User Id=williamTest;Password=Pslord$1A3;Trust Server Certificate=True;"));
+            builder.Services.AddDbContext<MoodTrackerContext>(options => options.UseSqlServer(DB_Conn_Str));
             builder.Services.AddAutoMapper(typeof(Program).Assembly);
 
-
-            //builder.Services.AddSingleton<TelemetryClient>(provider =>
-            //{
-            //    var config = TelemetryConfiguration.CreateDefault();
-            //    config.InstrumentationKey = instrumentation_Conn_Str;
-            //    return new TelemetryClient(config);
-            //});
-
-            // Optionally, configure Application Insights for logging
-        //    builder.Services.AddApplicationInsightsTelemetry(instrumentationKey);
-            
-
-            //builder.Services.AddApplicationInsightsTelemetry(instrumentation_Conn_Str);
-
-            //builder.Services.AddSingleton<ITelemetryModule, DependencyTrackingTelemetryModule>();
 
             // Build and run the host
             Host.CreateDefaultBuilder(args)
@@ -59,10 +44,6 @@ namespace MyFunctionApp
                    logging.AddSerilog(); // Integrate Serilog into Azure Functions logging
                });
 
-            //Log.Logger = new LoggerConfiguration()
-            //   .MinimumLevel.Debug() // Set the minimum logging level
-            //   .WriteTo.ApplicationInsights(instrumentationKey, TelemetryConverter.Traces) // Configure Application Insights sink
-            //   .CreateLogger();
             builder.Build().Run();
         }
 
