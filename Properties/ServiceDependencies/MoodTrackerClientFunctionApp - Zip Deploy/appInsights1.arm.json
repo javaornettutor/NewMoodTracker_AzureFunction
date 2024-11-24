@@ -4,7 +4,7 @@
   "parameters": {
     "resourceGroupName": {
       "type": "string",
-      "defaultValue": "MoodTrackerClientFunctionApp",
+      "defaultValue": "AzureFunctionRg",
       "metadata": {
         "_parameterType": "resourceGroup",
         "description": "Name of the resource group for the resource. It is recommended to put resources under same resource group for better tracking."
@@ -36,7 +36,7 @@
     },
     {
       "type": "Microsoft.Resources/deployments",
-      "name": "[concat(parameters('resourceGroupName'), 'Deployment', uniqueString(concat('MoodTrackerCientFunctionApp20241123754', subscription().subscriptionId)))]",
+      "name": "[concat(parameters('resourceGroupName'), 'Deployment', uniqueString(concat('MoodTrackerClientFunctionApp', subscription().subscriptionId)))]",
       "resourceGroup": "[parameters('resourceGroupName')]",
       "apiVersion": "2019-10-01",
       "dependsOn": [
@@ -50,7 +50,7 @@
           "resources": [
             {
               "kind": "web",
-              "name": "MoodTrackerCientFunctionApp20241123754",
+              "name": "MoodTrackerClientFunctionApp",
               "type": "microsoft.insights/components",
               "location": "[parameters('resourceLocation')]",
               "properties": {},
