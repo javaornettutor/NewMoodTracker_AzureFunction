@@ -29,21 +29,13 @@ namespace NewMoodTracker_AzureFunction
 {
     public class MoodTrackerHttpRequestFunction
     {
-        //string instrumentationKey = Environment.GetEnvironmentVariable("APPINSIGHTS_INSTRUMENTATIONKEY");
-
-        //private string instrumentationKey = "InstrumentationKey=b6db8295-d6e4-4511-af7d-f7c9d6094bbe;IngestionEndpoint=https://australiaeast-1.in.applicationinsights.azure.com/;LiveEndpoint=https://australiaeast.livediagnostics.monitor.azure.com/;ApplicationId=b8493ecc-6043-4bb6-a8ce-968330094c69";
-        //private TelemetryConfiguration config;
-        //private TelemetryClient _telemetry;
         private ILogger _log;
         private readonly MoodTrackerContext _context; 
         private Validator validatorObj;
         private IMapper _mapper;
-        public MoodTrackerHttpRequestFunction( IMapper mapper, MoodTrackerContext context)//, TelemetryClient telemetry) //, ILogger log
+        public MoodTrackerHttpRequestFunction( IMapper mapper, MoodTrackerContext context)
         {
-            // config = new TelemetryConfiguration(instrumentationKey);
-            //_telemetry = telemetry;
             _mapper = mapper;
-            //_log= log;
             _context = context;
             validatorObj = new Validator(_context);    
         }
@@ -51,17 +43,15 @@ namespace NewMoodTracker_AzureFunction
         public List<Mood> GetAllMoods()
         {
             var moods = _context.Moods.ToList();
-            //Console.WriteLine(moods);
-            return moods; // 200 is OK status code
+            return moods; 
         }
 
-        // Endpoint: AveragePerMood - Calculates average mood rating or returns mood comments for a given interval.
+       
         [Function("AveragePerMood")]
         public IActionResult AveragePerMood([HttpTrigger(AuthorizationLevel.Admin, "get", Route = null)] HttpRequest req)
         {
             string intervalStr = req.Query["interval"];
-            //_logger.LogInformation("test");
-
+            
             if (string.IsNullOrEmpty(intervalStr))
             {
                 return new NotFoundObjectResult("invalid interval");
@@ -202,10 +192,7 @@ namespace NewMoodTracker_AzureFunction
         }
 
         [Function("TestHttpTriggerFunction")]
-        public async Task<IActionResult> TestHttpTriggerFunction(
-             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = "sample/{id?}")] HttpRequest req,
-             ILogger log,
-             string id)
+        public async Task<IActionResult> TestHttpTriggerFunction([HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = "sample/{id?}")] HttpRequest req,ILogger log,string id)
         {
 
 
@@ -239,8 +226,7 @@ namespace NewMoodTracker_AzureFunction
             {
                 status = "error",
                 message = message
-            });
-            
+            });            
         }       
     }
 }
