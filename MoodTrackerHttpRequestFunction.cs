@@ -23,6 +23,8 @@ using Serilog;
 using Serilog.Core;
 using System.Net;
 using ILogger = Serilog.ILogger;
+using Newtonsoft.Json;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 
 namespace NewMoodTracker_AzureFunction
@@ -45,8 +47,8 @@ namespace NewMoodTracker_AzureFunction
             var moods = _context.Moods.ToList();
             return moods; 
         }
+     
 
-       
         [Function("AveragePerMood")]
         public async Task<HttpResponseData> AveragePerMood([HttpTrigger(AuthorizationLevel.Admin, "get", Route = null)] HttpRequestData req, HttpResponseData response)
         {
@@ -210,7 +212,7 @@ namespace NewMoodTracker_AzureFunction
             }
         }
 
-
+        [Function("TestFunctionOnly")]
         public async Task<IActionResult> TestHttpTriggerFunction(
              [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = "sample/{id?}")] HttpRequestData req, HttpResponseData response,
              ILogger log,
